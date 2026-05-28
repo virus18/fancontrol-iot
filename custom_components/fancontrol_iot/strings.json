@@ -1,0 +1,64 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "FanControl IoT — Gerät hinzufügen",
+        "description": "Trage die Tuya-LAN-Credentials für deinen Lüfter ein. Werte bekommst du via `tinytuya wizard`.",
+        "data": {
+          "name": "Anzeigename",
+          "device_id": "Device ID (gwId)",
+          "local_key": "Local Key",
+          "address": "IP-Adresse",
+          "version": "Tuya-Protokoll-Version"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung fehlgeschlagen — IP/Version/Local-Key prüfen.",
+      "no_data": "Verbunden, aber keine DPs empfangen. Vermutlich falsche Protokoll-Version."
+    },
+    "abort": {
+      "already_configured": "Dieses Gerät ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "FanControl IoT — Einstellungen",
+        "data": {
+          "name": "Anzeigename",
+          "device_id": "Device ID",
+          "local_key": "Local Key",
+          "address": "IP-Adresse",
+          "version": "Tuya-Protokoll-Version"
+        }
+      }
+    }
+  },
+  "entity": {
+    "fan": {
+      "fan": { "name": "Lüfter" }
+    },
+    "sensor": {
+      "temperature": { "name": "Temperatur" },
+      "humidity":    { "name": "Feuchte" }
+    },
+    "number": {
+      "target_temperature": { "name": "Soll-Temperatur" },
+      "target_humidity":    { "name": "Soll-Feuchte" },
+      "timer":              { "name": "Timer" }
+    },
+    "select": {
+      "mode": {
+        "name": "Modus",
+        "state": {
+          "manual": "Manuell",
+          "auto":   "Automatik",
+          "timer":  "Timer",
+          "smart":  "Smart",
+          "sleep":  "Sleep"
+        }
+      }
+    }
+  }
+}

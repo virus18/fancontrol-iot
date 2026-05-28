@@ -1,0 +1,64 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "FanControl IoT — Add Device",
+        "description": "Enter the Tuya LAN credentials for your fan. Values are obtained via `tinytuya wizard`.",
+        "data": {
+          "name": "Display name",
+          "device_id": "Device ID (gwId)",
+          "local_key": "Local key",
+          "address": "IP address",
+          "version": "Tuya protocol version"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Connection failed — check IP, version and local key.",
+      "no_data": "Connected but no datapoints returned. Likely wrong protocol version."
+    },
+    "abort": {
+      "already_configured": "This device is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "FanControl IoT — Settings",
+        "data": {
+          "name": "Display name",
+          "device_id": "Device ID",
+          "local_key": "Local key",
+          "address": "IP address",
+          "version": "Tuya protocol version"
+        }
+      }
+    }
+  },
+  "entity": {
+    "fan": {
+      "fan": { "name": "Fan" }
+    },
+    "sensor": {
+      "temperature": { "name": "Temperature" },
+      "humidity":    { "name": "Humidity" }
+    },
+    "number": {
+      "target_temperature": { "name": "Target temperature" },
+      "target_humidity":    { "name": "Target humidity" },
+      "timer":              { "name": "Timer" }
+    },
+    "select": {
+      "mode": {
+        "name": "Mode",
+        "state": {
+          "manual": "Manual",
+          "auto":   "Auto",
+          "timer":  "Timer",
+          "smart":  "Smart",
+          "sleep":  "Sleep"
+        }
+      }
+    }
+  }
+}

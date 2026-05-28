@@ -1,0 +1,7 @@
+{
+  "name": "FanControl IoT — Brogachy / Smart Farmers Tuya Fans",
+  "render_readme": true,
+  "homeassistant": "2024.1.0",
+  "iot_class": "local_polling",
+  "country": ["DE", "AT", "CH", "NL", "FR", "GB", "ES", "IT"]
+}
