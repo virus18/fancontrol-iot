@@ -71,6 +71,44 @@ Felder ausfuellen:
 
 Wenn die Verbindung steht: Geraet erscheint mit allen Entities.
 
+## Backend-Settings (HA → Integration → Configure)
+
+Nach dem initialen Setup kannst du **alles** ohne YAML-Editor ueber das
+HA-UI nachjustieren: Geraet anklicken → **Configure**-Button → Menue mit
+6 Untermenues:
+
+### Connection (Endpoints)
+Device ID, Local Key, IP-Adresse, Protokoll-Version aendern — falls dein
+Lueftungssteuerung umgezogen ist oder der Key neu vergeben wurde.
+
+### Polling-Intervall
+- **scan_interval** (3-600 s, Default 15) — wie oft der Status gepollt wird
+- **socket_timeout** (1-30 s, Default 5) — wie lange auf Antwort gewartet wird
+
+### DP-Mapping (Advanced)
+Override fuer die 8 Standard-DPs (Power, Mode, Speed, Temp, Humid, Setpoints,
+Timer) — nur noetig wenn dein Geraet abweichende DPs hat (testbar via dem
+Standalone-FanControl-Tool im Schwester-Repo).
+
+### Drehzahl + Skalierung
+- **speed_min** / **speed_max** — Bereich deiner Drehzahl (Default 1-10).
+   Manche EC-Fans gehen 1-9, andere 1-100.
+- **temp_scale** — 0.1 (DP liefert 235 → 23.5°C) oder 1.0 (direkt)
+- **mode_options** — komma-separierte Liste der Mode-Strings
+
+### Externe Sensoren / Notify
+- **outside_temp_entity** — Sensor mit Aussentemperatur (fuer Free-Cooling-Logik)
+- **weather_entity** — Wetter-Entity (fuer Prognose)
+- **notify_service** — wohin sollen Alarme gehen (z.B. `notify.mobile_app_pixel`)
+
+### Boost-Standardwerte
+- **boost_duration** — Default-Dauer in Minuten (Default 10)
+- **boost_percentage** — Drehzahl waehrend Boost (Default 100)
+- **boost_auto_enabled** — soll bei Kritisch-Schwelle automatisch boosten?
+
+Aenderungen werden sofort wirksam — die Integration laedt sich nach jedem
+Options-Save automatisch neu.
+
 ## DP-Mapping
 
 Die Integration nutzt das Standard-DP-Layout fuer Tuya-Klima/Fan-Geraete:

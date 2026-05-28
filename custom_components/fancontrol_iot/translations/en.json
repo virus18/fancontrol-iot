@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "FanControl IoT — Add Device",
-        "description": "Enter the Tuya LAN credentials for your fan. Values are obtained via `tinytuya wizard`.",
+        "description": "Tuya LAN credentials for your fan. Values from `tinytuya wizard`.",
         "data": {
           "name": "Display name",
           "device_id": "Device ID (gwId)",
@@ -25,6 +25,19 @@
     "step": {
       "init": {
         "title": "FanControl IoT — Settings",
+        "description": "What do you want to configure?",
+        "menu_options": {
+          "connection": "Connection (Endpoints)",
+          "polling":    "Polling Interval",
+          "dp_mapping": "DP Mapping (Advanced)",
+          "speed":      "Speed Range + Scaling",
+          "external":   "External Sensors / Notify",
+          "boost":      "Boost Defaults"
+        }
+      },
+      "connection": {
+        "title": "Connection",
+        "description": "Device ID, local key, IP, protocol version.",
         "data": {
           "name": "Display name",
           "device_id": "Device ID",
@@ -32,13 +45,61 @@
           "address": "IP address",
           "version": "Tuya protocol version"
         }
+      },
+      "polling": {
+        "title": "Polling Interval",
+        "description": "How often should the fan be polled? Longer intervals reduce network and module load.",
+        "data": {
+          "scan_interval": "Polling interval (seconds)",
+          "socket_timeout": "Socket timeout (seconds)"
+        }
+      },
+      "dp_mapping": {
+        "title": "DP Mapping",
+        "description": "Only change if your device has different DP numbers. Defaults are for Brogachy EUT series.",
+        "data": {
+          "dp_power":     "DP Power",
+          "dp_mode":      "DP Mode",
+          "dp_speed":     "DP Speed",
+          "dp_temp_in":   "DP Temperature (current)",
+          "dp_humid_in":  "DP Humidity (current)",
+          "dp_temp_set":  "DP Target Temperature",
+          "dp_humid_set": "DP Target Humidity",
+          "dp_timer":     "DP Timer"
+        }
+      },
+      "speed": {
+        "title": "Speed Range + Scaling",
+        "description": "Speed range of your device and temperature scaling.",
+        "data": {
+          "speed_min":    "Speed Min",
+          "speed_max":    "Speed Max",
+          "temp_scale":   "Temperature scale",
+          "mode_options": "Mode options (comma-separated)"
+        }
+      },
+      "external": {
+        "title": "External Sensors",
+        "description": "External data sources for free-cooling hints and notifications.",
+        "data": {
+          "outside_temp_entity": "Outside temperature sensor",
+          "weather_entity":      "Weather entity",
+          "notify_service":      "Notify service (e.g. notify.mobile_app_xyz)"
+        }
+      },
+      "boost": {
+        "title": "Boost Defaults",
+        "description": "Defaults for the boost function (used by card / script).",
+        "data": {
+          "boost_duration":     "Boost duration (minutes)",
+          "boost_percentage":   "Boost speed (%)",
+          "boost_auto_enabled": "Auto-boost at critical threshold"
+        }
       }
     }
   },
   "entity": {
-    "fan": {
-      "fan": { "name": "Fan" }
-    },
+    "fan":    { "fan": { "name": "Fan" } },
     "sensor": {
       "temperature": { "name": "Temperature" },
       "humidity":    { "name": "Humidity" }

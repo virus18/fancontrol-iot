@@ -1,4 +1,4 @@
-"""Number-Plattform — Soll-Temperatur, Soll-Feuchte, Timer."""
+"""Number-Plattform — Soll-Temp, Soll-Feuchte, Timer."""
 
 from __future__ import annotations
 
@@ -14,9 +14,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     DOMAIN,
-    DP_HUMID_SET,
-    DP_TEMP_SET,
-    DP_TIMER,
     HUMID_MAX,
     HUMID_MIN,
     HUMID_STEP,
@@ -60,16 +57,19 @@ class TargetTemperature(FanControlBaseEntity, NumberEntity):
 
     @property
     def native_value(self) -> float | None:
-        raw = self.coordinator.dp(DP_TEMP_SET)
+        raw = self.coordinator.dp_value("temp_set")
         if raw is None:
             return None
         try:
-            return float(raw) / 10.0
+            return float(raw) * self.coordinator.temp_scale
         except (TypeError, ValueError):
             return None
 
     async def async_set_native_value(self, value: float) -> None:
-        await self.coordinator.async_set_dp(DP_TEMP_SET, int(round(value * 10)))
+        # Wenn Skala 0.1, dann Wert *10 senden — sonst direkt
+        scale = self.coordinator.temp_scale
+        raw = int(round(value / scale)) if scale else int(round(value))
+        await self.coordinator.async_set_role("temp_set", raw)
 
 
 class TargetHumidity(FanControlBaseEntity, NumberEntity):
@@ -86,7 +86,7 @@ class TargetHumidity(FanControlBaseEntity, NumberEntity):
 
     @property
     def native_value(self) -> float | None:
-        raw = self.coordinator.dp(DP_HUMID_SET)
+        raw = self.coordinator.dp_value("humid_set")
         if raw is None:
             return None
         try:
@@ -95,7 +95,7 @@ class TargetHumidity(FanControlBaseEntity, NumberEntity):
             return None
 
     async def async_set_native_value(self, value: float) -> None:
-        await self.coordinator.async_set_dp(DP_HUMID_SET, int(round(value)))
+        await self.coordinator.async_set_role("humid_set", int(round(value)))
 
 
 class TimerNumber(FanControlBaseEntity, NumberEntity):
@@ -111,7 +111,7 @@ class TimerNumber(FanControlBaseEntity, NumberEntity):
 
     @property
     def native_value(self) -> float | None:
-        raw = self.coordinator.dp(DP_TIMER)
+        raw = self.coordinator.dp_value("timer")
         if raw is None:
             return None
         try:
@@ -120,4 +120,4 @@ class TimerNumber(FanControlBaseEntity, NumberEntity):
             return None
 
     async def async_set_native_value(self, value: float) -> None:
-        await self.coordinator.async_set_dp(DP_TIMER, int(round(value)))
+        await self.coordinator.async_set_role("timer", int(round(value)))

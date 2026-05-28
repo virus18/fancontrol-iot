@@ -1,4 +1,4 @@
-"""Sensor-Plattform — gemessene Temperatur und Feuchte."""
+"""Sensor-Plattform — Temperatur + Feuchte. Temp-Skala kommt aus Options."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from homeassistant.const import PERCENTAGE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, DP_HUMID_IN, DP_TEMP_IN
+from .const import DOMAIN
 from .coordinator import FanControlCoordinator
 from .entity import FanControlBaseEntity
 
@@ -23,12 +23,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: FanControlCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        [
-            TemperatureSensor(coordinator),
-            HumiditySensor(coordinator),
-        ]
-    )
+    async_add_entities([TemperatureSensor(coordinator), HumiditySensor(coordinator)])
 
 
 class _BaseSensor(FanControlBaseEntity, SensorEntity):
@@ -46,11 +41,11 @@ class TemperatureSensor(_BaseSensor):
 
     @property
     def native_value(self) -> float | None:
-        raw = self.coordinator.dp(DP_TEMP_IN)
+        raw = self.coordinator.dp_value("temp_in")
         if raw is None:
             return None
         try:
-            return float(raw) / 10.0
+            return float(raw) * self.coordinator.temp_scale
         except (TypeError, ValueError):
             return None
 
@@ -65,7 +60,7 @@ class HumiditySensor(_BaseSensor):
 
     @property
     def native_value(self) -> float | None:
-        raw = self.coordinator.dp(DP_HUMID_IN)
+        raw = self.coordinator.dp_value("humid_in")
         if raw is None:
             return None
         try:

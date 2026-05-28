@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "FanControl IoT — Gerät hinzufügen",
-        "description": "Trage die Tuya-LAN-Credentials für deinen Lüfter ein. Werte bekommst du via `tinytuya wizard`.",
+        "description": "Tuya-LAN-Credentials für den Lüfter. Werte aus `tinytuya wizard`.",
         "data": {
           "name": "Anzeigename",
           "device_id": "Device ID (gwId)",
@@ -25,6 +25,19 @@
     "step": {
       "init": {
         "title": "FanControl IoT — Einstellungen",
+        "description": "Was möchtest du konfigurieren?",
+        "menu_options": {
+          "connection": "Verbindung (Endpoints)",
+          "polling":    "Polling-Intervall",
+          "dp_mapping": "DP-Mapping (Fortgeschritten)",
+          "speed":      "Drehzahl + Skalierung",
+          "external":   "Externe Sensoren / Notify",
+          "boost":      "Boost-Standardwerte"
+        }
+      },
+      "connection": {
+        "title": "Verbindung",
+        "description": "Device ID, Local Key, IP, Protokoll-Version.",
         "data": {
           "name": "Anzeigename",
           "device_id": "Device ID",
@@ -32,13 +45,61 @@
           "address": "IP-Adresse",
           "version": "Tuya-Protokoll-Version"
         }
+      },
+      "polling": {
+        "title": "Polling-Intervall",
+        "description": "Wie oft soll der Lüfter abgefragt werden? Längere Intervalle entlasten Netzwerk und Modul.",
+        "data": {
+          "scan_interval": "Polling-Intervall (Sekunden)",
+          "socket_timeout": "Socket-Timeout (Sekunden)"
+        }
+      },
+      "dp_mapping": {
+        "title": "DP-Mapping",
+        "description": "Nur ändern, wenn dein Gerät abweichende DP-Nummern hat. Standardwerte passen für Brogachy EUT-Reihe.",
+        "data": {
+          "dp_power":     "DP Power",
+          "dp_mode":      "DP Mode",
+          "dp_speed":     "DP Drehzahl",
+          "dp_temp_in":   "DP Temperatur (Ist)",
+          "dp_humid_in":  "DP Feuchte (Ist)",
+          "dp_temp_set":  "DP Soll-Temperatur",
+          "dp_humid_set": "DP Soll-Feuchte",
+          "dp_timer":     "DP Timer"
+        }
+      },
+      "speed": {
+        "title": "Drehzahl + Skalierung",
+        "description": "Drehzahl-Range deines Geräts und Temperatur-Skalierung.",
+        "data": {
+          "speed_min":    "Drehzahl Min",
+          "speed_max":    "Drehzahl Max",
+          "temp_scale":   "Temperatur-Skala",
+          "mode_options": "Modus-Optionen (komma-separiert)"
+        }
+      },
+      "external": {
+        "title": "Externe Sensoren",
+        "description": "Externe Datenquellen für Free-Cooling-Hinweise und Notifications.",
+        "data": {
+          "outside_temp_entity": "Außentemperatur-Sensor",
+          "weather_entity":      "Wetter-Entity",
+          "notify_service":      "Notify-Service (z.B. notify.mobile_app_xyz)"
+        }
+      },
+      "boost": {
+        "title": "Boost-Standardwerte",
+        "description": "Defaults für die Boost-Funktion (Card / Script verwenden diese).",
+        "data": {
+          "boost_duration":     "Boost-Dauer (Minuten)",
+          "boost_percentage":   "Boost-Drehzahl (%)",
+          "boost_auto_enabled": "Auto-Boost bei Kritisch-Schwelle"
+        }
       }
     }
   },
   "entity": {
-    "fan": {
-      "fan": { "name": "Lüfter" }
-    },
+    "fan":    { "fan": { "name": "Lüfter" } },
     "sensor": {
       "temperature": { "name": "Temperatur" },
       "humidity":    { "name": "Feuchte" }

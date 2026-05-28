@@ -1,9 +1,4 @@
-"""FanControl-IoT — Home Assistant Integration fuer Brogachy / Smart-Farmers-Tuya-Luefter.
-
-Architektur:
-    ConfigEntry -> TuyaClient (tinytuya-Wrapper) -> DataUpdateCoordinator
-    -> Plattformen (fan, sensor, number, select)
-"""
+"""FanControl-IoT — Home Assistant Integration fuer Brogachy / Smart-Farmers-Tuya-Luefter."""
 
 from __future__ import annotations
 
@@ -12,7 +7,12 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, PLATFORMS
+from .const import (
+    CONF_SOCKET_TIMEOUT,
+    DEFAULT_SOCKET_TIMEOUT,
+    DOMAIN,
+    PLATFORMS,
+)
 from .coordinator import FanControlCoordinator, TuyaClient
 
 _LOGGER = logging.getLogger(__name__)
@@ -25,6 +25,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         local_key=entry.data["local_key"],
         address=entry.data["address"],
         version=float(entry.data.get("version", 3.4)),
+        socket_timeout=int(entry.options.get(CONF_SOCKET_TIMEOUT, DEFAULT_SOCKET_TIMEOUT)),
     )
 
     coordinator = FanControlCoordinator(hass, client, entry)
@@ -47,5 +48,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def _async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Bei Options-Aenderung Integration neu laden."""
+    """Bei Options-Aenderung: Integration neu laden, damit Scan-Interval,
+    DP-Mapping etc. greifen."""
     await hass.config_entries.async_reload(entry.entry_id)

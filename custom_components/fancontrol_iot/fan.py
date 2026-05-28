@@ -1,4 +1,4 @@
-"""Fan-Plattform — Power + Drehzahl."""
+"""Fan-Plattform — Power + Drehzahl. Liest DP-Nummern + Range aus Coordinator."""
 
 from __future__ import annotations
 
@@ -13,11 +13,9 @@ from homeassistant.util.percentage import (
     ranged_value_to_percentage,
 )
 
-from .const import DOMAIN, DP_POWER, DP_SPEED, SPEED_MAX, SPEED_MIN
+from .const import DOMAIN
 from .coordinator import FanControlCoordinator
 from .entity import FanControlBaseEntity
-
-SPEED_RANGE = (SPEED_MIN, SPEED_MAX)
 
 
 async def async_setup_entry(
@@ -39,25 +37,30 @@ class FanControlFan(FanControlBaseEntity, FanEntity):
 
     def __init__(self, coordinator: FanControlCoordinator):
         super().__init__(coordinator, "fan")
-        self._attr_name = None  # nutzt Device-Name als Entity-Name
+        self._attr_name = None
+
+    @property
+    def _speed_range(self) -> tuple[int, int]:
+        return (self.coordinator.speed_min, self.coordinator.speed_max)
 
     @property
     def is_on(self) -> bool | None:
-        return bool(self.coordinator.dp(DP_POWER))
+        return bool(self.coordinator.dp_value("power"))
 
     @property
     def percentage(self) -> int | None:
-        val = self.coordinator.dp(DP_SPEED)
+        val = self.coordinator.dp_value("speed")
         if val is None:
             return None
         try:
-            return ranged_value_to_percentage(SPEED_RANGE, int(val))
+            return ranged_value_to_percentage(self._speed_range, int(val))
         except (ValueError, TypeError):
             return None
 
     @property
     def speed_count(self) -> int:
-        return SPEED_MAX - SPEED_MIN + 1
+        lo, hi = self._speed_range
+        return max(1, hi - lo + 1)
 
     async def async_turn_on(
         self,
@@ -65,20 +68,20 @@ class FanControlFan(FanControlBaseEntity, FanEntity):
         preset_mode: str | None = None,
         **kwargs: Any,
     ) -> None:
-        await self.coordinator.async_set_dp(DP_POWER, True)
+        await self.coordinator.async_set_role("power", True)
         if percentage is not None:
             await self.async_set_percentage(percentage)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        await self.coordinator.async_set_dp(DP_POWER, False)
+        await self.coordinator.async_set_role("power", False)
 
     async def async_set_percentage(self, percentage: int) -> None:
         if percentage <= 0:
-            await self.coordinator.async_set_dp(DP_POWER, False)
+            await self.coordinator.async_set_role("power", False)
             return
-        value = int(percentage_to_ranged_value(SPEED_RANGE, percentage))
-        value = max(SPEED_MIN, min(SPEED_MAX, value))
-        # Bei Speed-Set Power gleich mit an, damit's nicht stumm bleibt
+        lo, hi = self._speed_range
+        value = int(percentage_to_ranged_value(self._speed_range, percentage))
+        value = max(lo, min(hi, value))
         if not self.is_on:
-            await self.coordinator.async_set_dp(DP_POWER, True)
-        await self.coordinator.async_set_dp(DP_SPEED, value)
+            await self.coordinator.async_set_role("power", True)
+        await self.coordinator.async_set_role("speed", value)
