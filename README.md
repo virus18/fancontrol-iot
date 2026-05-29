@@ -11,7 +11,6 @@ OEM-Hersteller ShenZhen Faithful Technology).
 **100 % lokal über LAN.** Kein Tuya-Cloud-Traffic, nach dem einmaligen
 Pairing kein Internet nötig.
 
-
 ## Highlights
 
 - **22 Entities** pro Gerät — alles in HA bedienbar (Fan, Sensoren,
