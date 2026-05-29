@@ -151,8 +151,8 @@ neu.
 ## DP-Mapping (EUT-300B, vollständig verifiziert)
 
 Alle DPs per Live-Observer durch die Smart-Life-App getoggelt und
-bestätigt. Details siehe [`docs/dp-mapping.md`](docs/dp-mapping.md) im
-Schwester-Repo.
+bestätigt. Vollständige Tabelle mit allen Wertebereichen, Encoding-Details
+und Cloud-vs-LAN-Vergleich in [`docs/dp-mapping.md`](docs/dp-mapping.md).
 
 | DP | Funktion | Encoding | Konfigurierbar |
 |----|----------|----------|----------------|
