@@ -29,12 +29,22 @@ class ModeSelect(FanControlBaseEntity, SelectEntity):
 
     @property
     def options(self) -> list[str]:
-        return self.coordinator.mode_options
+        # Translation-Keys muessen lowercase sein — also normalisieren wir
+        # die Option-Strings hier auf lowercase (das EUT-300B-Gerät erwartet
+        # intern UPPERCASE, das wir beim Schreiben wieder herstellen).
+        return [str(o).lower() for o in self.coordinator.mode_options]
 
     @property
     def current_option(self) -> str | None:
         val = self.coordinator.dp_value("mode")
-        return None if val is None else str(val)
+        return None if val is None else str(val).lower()
 
     async def async_select_option(self, option: str) -> None:
-        await self.coordinator.async_set_role("mode", option)
+        # Geraete-Encoding ist UPPERCASE — vor dem Schreiben zuruecksetzen.
+        # Match-Lookup: erst exakt suchen (case-insensitive), sonst as-is.
+        target = option
+        for raw in self.coordinator.mode_options:
+            if str(raw).lower() == option.lower():
+                target = str(raw)
+                break
+        await self.coordinator.async_set_role("mode", target)

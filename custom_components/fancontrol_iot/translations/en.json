@@ -141,15 +141,13 @@
       "mode": {
         "name": "Mode",
         "state": {
-          "ON":     "Manual (On)",
-          "AUTO":   "Auto",
-          "TIMER":  "Timer",
-          "ALARM":  "Alarm",
           "manual": "Manual",
           "auto":   "Auto",
           "timer":  "Timer",
+          "alarm":  "Alarm",
           "smart":  "Smart",
-          "sleep":  "Sleep"
+          "sleep":  "Sleep",
+          "on":     "Manual (On)"
         }
       }
     }
