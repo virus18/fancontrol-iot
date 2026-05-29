@@ -1,36 +1,61 @@
 # FanControl IoT
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![version](https://img.shields.io/badge/version-0.5.2-blue.svg)](https://github.com/virus18/fancontrol-iot/releases)
 
-Home-Assistant-Integration fuer Tuya-basierte EC-Abluftventilatoren — speziell
+Home-Assistant-Integration für Tuya-basierte EC-Abluftventilatoren — speziell
 **Brogachy EUT-Reihe** (EUT-100B / 150B / 200B / 250B / 300B) und baugleiche
-Geräte aus der **Smart Farmers App** von ShenZhen Faithful Technology.
+Geräte aus der **Smart Farmers App** (App-Store-ID `1671760315`,
+OEM-Hersteller ShenZhen Faithful Technology).
 
-**Steuerung 100% lokal über das LAN** — kein Tuya-Cloud-Traffic, nach dem
-einmaligen Pairing kein Internet noetig.
+**100 % lokal über LAN.** Kein Tuya-Cloud-Traffic, nach dem einmaligen
+Pairing kein Internet nötig.
 
-## Was du bekommst
 
-Pro Geraet vier Plattformen:
+## Highlights
 
-| Entity                          | Funktion                                      |
-|---------------------------------|-----------------------------------------------|
-| `fan.<name>`                    | Power + Drehzahl (10 Stufen via Prozent)      |
-| `sensor.<name>_temperature`     | gemessene Temperatur                          |
-| `sensor.<name>_humidity`        | gemessene Feuchte                             |
-| `number.<name>_target_temperature` | Sollwert Temperatur                        |
-| `number.<name>_target_humidity` | Sollwert Feuchte                              |
-| `number.<name>_timer`           | Countdown-Timer (Sekunden)                    |
-| `select.<name>_mode`            | Betriebsmodus (manual / auto / timer / ...)   |
+- **22 Entities** pro Gerät — alles in HA bedienbar (Fan, Sensoren,
+  Schwellwerte, Trigger-Switches, Kalibrierung, Child Lock, Brightness)
+- **Notbetrieb-aware Fan-Entity** — `is_on` über DP 103 (Ist-Wert), sodass
+  Auto-Boost bei Alarm korrekt angezeigt wird
+- **Auto-generiertes Dashboard** via Lovelace-Strategy (`custom:fancontrol-strategy`) — 3 Views (Steuerung / Schwellwerte / Einstellungen) ohne YAML-Schreiben
+- **Hardware-Alarm als `binary_sensor`** mit `device_class: problem` —
+  perfekt für Push-Notifications
+- **Schwellwerte in °C eingebbar**, intern automatisch nach °F konvertiert
+- **Trigger-Switches gekapselt** — interne `"0"=ON / "1"=OFF`-Invertierung
+  ist für HA-Nutzer unsichtbar
+- **Standalone-Web-UI + CLI** im Schwester-Repo zum Mappen unbekannter
+  Geräte-Varianten
+
+## Was du in HA bekommst (pro Gerät)
+
+| Plattform | Entity (Beispiel) | Funktion |
+|-----------|--------------------|----------|
+| `fan` | `fan.<name>` | Power + Drehzahl 0–100 % (Stufe 1–10), Auto-Boost-bewusst |
+| `select` | `select.<name>_mode` | Betriebsmodus: `ON / TIMER / AUTO / ALARM` |
+| `sensor` | `sensor.<name>_temperature` | Innentemperatur in °C (auto-konvertiert aus °F) |
+| `sensor` | `sensor.<name>_humidity` | Innenfeuchte in % |
+| `sensor` | `sensor.<name>_countdown` | TIMER-Restzeit in Sekunden |
+| `binary_sensor` | `binary_sensor.<name>_alarm_triggered` | Hardware-Alarm aktiv |
+| `number` | `number.<name>_speed_stage` | Drehzahl-Slider 0–10 (redundant zum Fan, aber bequem) |
+| `number` | `number.<name>_brightness` | Display-Helligkeit (1–3) |
+| `number` × 4 | `…_auto_high_temp` etc. | Auto-Modus-Schwellwerte (°C / %) |
+| `number` × 4 | `…_alarm_high_temp` etc. | Alarm-Modus-Schwellwerte (°C / %) |
+| `number` × 2 | `…_temp_calibration` etc. | Sensor-Offset (°F-Schritte) |
+| `switch` × 4 | `…_auto_high_temp` etc. | Auto-Trigger an/aus |
+| `switch` × 4 | `…_alarm_high_temp` etc. | Alarm-Trigger an/aus |
+| `switch` | `…_child_lock` | Kindersicherung |
+| `switch` | `…_display_celsius` | Display-Einheit °C/°F |
 
 ## Installation
 
 ### Via HACS (empfohlen)
 
-1. HACS oeffnen → **Integrations** → die drei Punkte oben rechts → **Custom repositories**.
-2. URL dieses Repos eintragen, Kategorie: **Integration**.
-3. Suche nach **"FanControl IoT"** und installieren.
-4. Home Assistant neu starten.
+1. HACS öffnen → **Integrations** → ⋮ oben rechts → **Custom repositories**
+2. URL `https://github.com/virus18/fancontrol-iot` eintragen,
+   Kategorie **Integration**
+3. Nach **FanControl IoT** suchen und installieren
+4. Home Assistant neu starten
 
 ### Manuell
 
@@ -39,115 +64,189 @@ git clone https://github.com/virus18/fancontrol-iot.git
 cp -r fancontrol-iot/custom_components/fancontrol_iot /config/custom_components/
 ```
 
-Dann Home Assistant neu starten.
+Anschließend Home Assistant neu starten.
 
 ## Setup
 
-### 1. local_key besorgen
+### 1. `local_key` besorgen
 
-Da das Geraet ueber Tuya-Cloud provisioniert wird, brauchst du **einmalig**
-den `local_key`:
+Da das Gerät über die Tuya-Cloud provisioniert wird, brauchst du
+**einmalig** den `local_key`:
 
-1. Geraet in der **Smart Life App** (oder Smart Farmers) pairen.
-2. Auf [iot.tuya.com](https://iot.tuya.com) einen kostenlosen Account anlegen.
-3. Cloud-Projekt anlegen (Smart Home, Datacenter passend zur App-Region — bei
-   Smart-Life-DE = Central Europe).
-4. Devices → Link App Account → QR mit der App scannen.
-5. Auf der Konsole `python -m tinytuya wizard` ausfuehren — Wizard schreibt
-   `devices.json` mit `id`, `key`, `ip`, `ver`.
+1. Lüfter in der **Smart Life App** oder **Smart Farmers App** pairen
+   *(nur 2,4-GHz-WLAN — Tuya unterstützt kein 5 GHz)*
+2. Auf [iot.tuya.com](https://iot.tuya.com) einen kostenlosen Account anlegen
+3. **Cloud → Development → Create Cloud Project**, Industry **Smart Home**,
+   Data Center **Central Europe** (für deutsche App-Accounts)
+4. **Devices → Link App Account → Add App Account → Tuya App Account
+   Authorization** → QR-Code in der Smart-Life-App scannen
+   *(in der App: Tab „Ich" → Scan-Symbol oben rechts)*
+5. Im Projekt unter **Overview** Access-ID + Secret merken
+6. In der Konsole:
+   ```bash
+   pip install tinytuya
+   python -m tinytuya wizard
+   ```
+   Wizard fragt nach den Daten und schreibt `devices.json` mit `id`, `key`,
+   `ip`, `version`
 
-Details: siehe Repo [virus18/fancontrol-iot/wiki](https://github.com/virus18/fancontrol-iot/wiki).
+### 2. Integration hinzufügen
 
-### 2. Integration hinzufuegen
+In Home Assistant: **Settings → Devices & Services → Add Integration →
+FanControl IoT**
 
-In HA: **Settings → Devices & Services → Add Integration → FanControl IoT**.
+| Feld | Beispiel |
+|------|----------|
+| **Name** | `Lüfter Technikraum` |
+| **Device ID** | aus `devices.json`, Feld `id` |
+| **Local Key** | aus `devices.json`, Feld `key` |
+| **IP-Adresse** | aus `devices.json`, Feld `ip` (oder per LAN-Scan ermittelt) |
+| **Tuya-Protokoll-Version** | aus `devices.json`, meist `3.4` |
 
-Felder ausfuellen:
-- **Name** — Anzeigename (z.B. "Halle Abluft")
-- **Device ID** — aus `devices.json` (`id`-Feld)
-- **Local Key** — aus `devices.json` (`key`-Feld)
-- **IP-Adresse** — aus `devices.json` (`ip`-Feld)
-- **Version** — 3.3, 3.4 oder 3.5 (im Zweifel 3.4)
+Nach erfolgreichem Setup erscheinen alle 22 Entities am Device.
 
-Wenn die Verbindung steht: Geraet erscheint mit allen Entities.
+### 3. Dashboard automatisch generieren
+
+Die Integration bringt eine **Lovelace-Strategy** mit, die ein
+komplettes Dashboard mit 3 Views auto-generiert (Steuerung / Schwellwerte
+/ Einstellungen).
+
+1. **Settings → Dashboards → + Add Dashboard**
+2. Titel + Pfad eingeben (z. B. `Lüfter`)
+3. Dashboard öffnen → **Edit** → ⋮ → **Raw configuration editor**
+4. Alles ersetzen durch:
+   ```yaml
+   strategy:
+     type: custom:fancontrol-strategy
+   views: []
+   ```
+5. **Save** — fertig.
+
+Nur eine einzelne View ins existierende Dashboard:
+
+```yaml
+views:
+  - title: Lüfter
+    strategy:
+      type: custom:fancontrol-strategy
+      view: main      # | trigger | settings
+```
 
 ## Backend-Settings (HA → Integration → Configure)
 
-Nach dem initialen Setup kannst du **alles** ohne YAML-Editor ueber das
-HA-UI nachjustieren: Geraet anklicken → **Configure**-Button → Menue mit
-6 Untermenues:
+Alles ohne YAML-Editor über das HA-UI nachjustierbar:
 
-### Connection (Endpoints)
-Device ID, Local Key, IP-Adresse, Protokoll-Version aendern — falls dein
-Lueftungssteuerung umgezogen ist oder der Key neu vergeben wurde.
+| Untermenü | Inhalt |
+|-----------|--------|
+| **Connection** | Device ID, Local Key, IP, Protokoll-Version |
+| **Polling** | `scan_interval` (3–600 s), `socket_timeout` (1–30 s) |
+| **DP Mapping** | Override der 8 Standard-DPs für abweichende Modelle |
+| **Speed + Skalierung** | speed_min/max, temp_scale, temp_unit_input (°F/°C), mode_options |
+| **Externe Sensoren** | Outside-Temp / Weather / Notify-Service für Cards |
+| **Boost-Defaults** | Boost-Dauer, -Drehzahl, Auto-Boost-Switch |
 
-### Polling-Intervall
-- **scan_interval** (3-600 s, Default 15) — wie oft der Status gepollt wird
-- **socket_timeout** (1-30 s, Default 5) — wie lange auf Antwort gewartet wird
+Änderungen werden sofort wirksam — die Integration lädt sich automatisch
+neu.
 
-### DP-Mapping (Advanced)
-Override fuer die 8 Standard-DPs (Power, Mode, Speed, Temp, Humid, Setpoints,
-Timer) — nur noetig wenn dein Geraet abweichende DPs hat (testbar via dem
-Standalone-FanControl-Tool im Schwester-Repo).
+## DP-Mapping (EUT-300B, vollständig verifiziert)
 
-### Drehzahl + Skalierung
-- **speed_min** / **speed_max** — Bereich deiner Drehzahl (Default 1-10).
-   Manche EC-Fans gehen 1-9, andere 1-100.
-- **temp_scale** — 0.1 (DP liefert 235 → 23.5°C) oder 1.0 (direkt)
-- **mode_options** — komma-separierte Liste der Mode-Strings
+Alle DPs per Live-Observer durch die Smart-Life-App getoggelt und
+bestätigt. Details siehe [`docs/dp-mapping.md`](docs/dp-mapping.md) im
+Schwester-Repo.
 
-### Externe Sensoren / Notify
-- **outside_temp_entity** — Sensor mit Aussentemperatur (fuer Free-Cooling-Logik)
-- **weather_entity** — Wetter-Entity (fuer Prognose)
-- **notify_service** — wohin sollen Alarme gehen (z.B. `notify.mobile_app_pixel`)
+| DP | Funktion | Encoding | Konfigurierbar |
+|----|----------|----------|----------------|
+| 1 | Online-Flag | bool, immer `true` | — |
+| 2 | Modus | enum `ON/TIMER/AUTO/ALARM` | ✓ |
+| 8 | Feuchte (Ist) | int `%` | — (read-only) |
+| 9 | Temperatur (Ist) | int `°F` | — (read-only) |
+| 101 | Display-Helligkeit | int 1–3 | ✓ |
+| 102 | **Drehzahl + Power** | int 0–10 (0 = aus) | ✓ |
+| 103 | Drehzahl (Ist) | int (Spiegel + Notbetrieb) | — (read-only) |
+| 105 | Countdown / Alarm-Flag | str: `"0"` idle, `"8"` Alarm aktiv | — |
+| 106–113 | 8× Schwellwerte | int °F bzw. % | ✓ |
+| 114 | Child Lock | str `"0"=unlock`/`"1"=lock` | ✓ |
+| 115 | Display-Einheit | str `"1"=°C`/`"0"=°F` | ✓ |
+| 116–123 | 8× Trigger-Switches | str **invertiert** `"0"=ON`/`"1"=OFF` | ✓ |
+| 124, 125 | Temp- / Humid-Kalibrierung | int Offset | ✓ |
 
-### Boost-Standardwerte
-- **boost_duration** — Default-Dauer in Minuten (Default 10)
-- **boost_percentage** — Drehzahl waehrend Boost (Default 100)
-- **boost_auto_enabled** — soll bei Kritisch-Schwelle automatisch boosten?
+## Architektur-Highlights
 
-Aenderungen werden sofort wirksam — die Integration laedt sich nach jedem
-Options-Save automatisch neu.
+### `fan.py` — Notbetrieb-bewusst
 
-## DP-Mapping
+```python
+@property
+def is_on(self) -> bool | None:
+    # actual_speed (DP 103) ist die Quelle der Wahrheit — deckt auch
+    # den Notbetrieb ab (DP 103 = 10 bei Alarm, obwohl DP 102 = 0).
+    if self.coordinator.power_and_speed_share_dp:
+        actual = self.coordinator.actual_speed()
+        return None if actual is None else actual > 0
+    return bool(self.coordinator.dp_value("power"))
+```
 
-Die Integration nutzt das Standard-DP-Layout fuer Tuya-Klima/Fan-Geraete:
+### `switch.py` — Inverted Trigger gekapselt
 
-| DP  | Funktion             |
-|-----|----------------------|
-| 1   | Power (bool)         |
-| 2   | Mode (str enum)      |
-| 3   | Drehzahl (int 1..10) |
-| 18  | Temp Ist (int, /10)  |
-| 19  | Humid Ist (int)      |
-| 22  | Soll-Temperatur      |
-| 23  | Soll-Feuchte         |
-| 26  | Timer (Sekunden)     |
+```python
+async def async_set_trigger(self, role: str, on: bool) -> None:
+    """HA-ON → '0', HA-OFF → '1' (Geräte-Encoding ist invertiert)."""
+    await self.async_set_role(role, "0" if on else "1")
+```
 
-Falls dein Geraet ein abweichendes DP-Layout hat, ist [das mitgelieferte
-Setup-Tool](https://github.com/virus18/fancontrol-iot/tree/main/tools) im
-Schwester-Repo hilfreich, um das Mapping interaktiv zu finden.
+### `number.py` — °C ↔ °F transparent
 
-## Bekannte unterstuetzte Geraete
+```python
+async def async_set_native_value(self, value: float) -> None:
+    # User-Eingabe in °C → in °F konvertieren vor dem Schreiben
+    await self.coordinator.async_set_role(self._role, _c_to_f(value))
+```
 
-- Brogachy EUT-100B / 150B / 200B / 250B / 300B (verifiziert: ___)
-- baugleiche EC-Inline-/Wandventilatoren von Faithful Technology
+### `binary_sensor.py` — Hardware-Alarm
 
-Falls du ein Geraet zum Laufen gebracht hast: bitte ein PR mit Eintrag hier.
+```python
+@property
+def is_on(self) -> bool:
+    return self.coordinator.is_alarm_active   # DP 105 == "8"
+```
 
 ## Troubleshooting
 
-**"Connection failed"** beim Setup
-→ IP falsch, Geraet im 5-GHz-WLAN (Tuya kann nur 2.4 GHz), oder falsche Version.
+**„Connection failed" beim Setup**
+→ IP falsch, Gerät im 5-GHz-WLAN (Tuya kann nur 2.4), oder falsche
+Protokoll-Version (probier 3.3 / 3.4 / 3.5)
 
-**"No data"**
-→ Verbindung klappt, aber `tinytuya` bekommt keine DPs. Andere Protokoll-Version
-   probieren (3.3/3.4/3.5).
+**„No data" / nur leere DPs**
+→ Verbindung klappt, aber `tinytuya` bekommt keine Werte. Andere
+Protokoll-Version probieren.
 
-**Lokaler Key wurde ungueltig**
-→ Bei Re-Pairing oder Firmware-Update wird der `local_key` neu vergeben.
-   `tinytuya wizard` nochmal laufen lassen, in der Integration-Konfiguration
-   den neuen Key eintragen (Options-Flow).
+**Temperatur zeigt z. B. −13 °C statt 22 °C**
+→ Alte `temp_scale = 0.1` aus früherer Setup-Version hängt in den Options.
+Fix: **Integration → Configure → Speed Range + Scaling →
+`temp_scale = 1.0`** setzen.
+
+**Mode-Dropdown zeigt `manual/auto/timer/smart/sleep` statt
+`ON/TIMER/AUTO/ALARM`**
+→ Gleicher Carry-over-Effekt. **Configure → Speed Range + Scaling →
+Mode options** korrigieren oder Integration löschen + neu hinzufügen.
+
+**Lokaler Key wurde ungültig**
+→ Nach Re-Pairing oder Firmware-Update vergibt Tuya einen neuen Key.
+`tinytuya wizard` erneut ausführen und den neuen Key in der
+Integration-Konfig eintragen.
+
+**Strategy-Dashboard rendert nicht**
+→ Browser-Cache: `Strg+Shift+R`. Falls weiterhin leer → F12-Konsole:
+beim Laden müsste `FANCONTROL-STRATEGY v0.5.2` erscheinen.
+
+## Verifizierte Geräte
+
+- ✅ Brogachy **EUT-300B** (vollständig getestet, 27 DPs gemessen)
+- 🟡 Brogachy EUT-100B / 150B / 200B / 250B (baugleich — DP-Layout
+  vermutlich identisch)
+- 🟡 Smart-Farmers-Whitelabel von Faithful Technology (gleiche App,
+  gleiche Cloud)
+
+PRs für weitere verifizierte Geräte willkommen — siehe Issue-Template.
 
 ## Lizenz
 
@@ -155,6 +254,6 @@ MIT — siehe [LICENSE](LICENSE).
 
 ## Quellen + Inspiration
 
-- [tinytuya](https://github.com/jasonacox/tinytuya)
-- [tuya-local](https://github.com/make-all/tuya-local)
-- [LocalTuya](https://github.com/rospogrigio/localtuya)
+- [tinytuya](https://github.com/jasonacox/tinytuya) — Python-Tuya-LAN-Lib
+- [tuya-local](https://github.com/make-all/tuya-local) — HA-Tuya generisch
+- [LocalTuya](https://github.com/rospogrigio/localtuya) — alter Klassiker

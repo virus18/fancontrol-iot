@@ -1,7 +1,7 @@
 {
   "domain": "fancontrol_iot",
   "name": "FanControl IoT",
-  "version": "0.2.0",
+  "version": "0.5.2",
   "documentation": "https://github.com/virus18/fancontrol-iot",
   "issue_tracker": "https://github.com/virus18/fancontrol-iot/issues",
   "codeowners": ["@virus18"],

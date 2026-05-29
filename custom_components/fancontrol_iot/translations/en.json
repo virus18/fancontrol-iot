@@ -102,17 +102,49 @@
     "fan":    { "fan": { "name": "Fan" } },
     "sensor": {
       "temperature": { "name": "Temperature" },
-      "humidity":    { "name": "Humidity" }
+      "humidity":    { "name": "Humidity" },
+      "countdown":   { "name": "Countdown" }
+    },
+    "binary_sensor": {
+      "alarm_triggered": { "name": "Alarm triggered" }
+    },
+    "switch": {
+      "auto_high_temp":   { "name": "Auto · High · Temp" },
+      "auto_high_humid":  { "name": "Auto · High · Humid" },
+      "auto_low_temp":    { "name": "Auto · Low · Temp" },
+      "auto_low_humid":   { "name": "Auto · Low · Humid" },
+      "alarm_high_temp":  { "name": "Alarm · High · Temp" },
+      "alarm_high_humid": { "name": "Alarm · High · Humid" },
+      "alarm_low_temp":   { "name": "Alarm · Low · Temp" },
+      "alarm_low_humid":  { "name": "Alarm · Low · Humid" },
+      "child_lock":       { "name": "Child lock" },
+      "display_celsius":  { "name": "Display in °C" }
     },
     "number": {
       "target_temperature": { "name": "Target temperature" },
       "target_humidity":    { "name": "Target humidity" },
-      "timer":              { "name": "Timer" }
+      "timer":              { "name": "Timer" },
+      "brightness":         { "name": "Display brightness" },
+      "speed_stage":        { "name": "Speed stage" },
+      "temp_calibration":   { "name": "Temp calibration" },
+      "humid_calibration":  { "name": "Humid calibration" },
+      "auto_high_temp":     { "name": "Auto · High · Temperature" },
+      "auto_low_temp":      { "name": "Auto · Low · Temperature" },
+      "alarm_high_temp":    { "name": "Alarm · High · Temperature" },
+      "alarm_low_temp":     { "name": "Alarm · Low · Temperature" },
+      "auto_high_humid":    { "name": "Auto · High · Humid" },
+      "auto_low_humid":     { "name": "Auto · Low · Humid" },
+      "alarm_high_humid":   { "name": "Alarm · High · Humid" },
+      "alarm_low_humid":    { "name": "Alarm · Low · Humid" }
     },
     "select": {
       "mode": {
         "name": "Mode",
         "state": {
+          "ON":     "Manual (On)",
+          "AUTO":   "Auto",
+          "TIMER":  "Timer",
+          "ALARM":  "Alarm",
           "manual": "Manual",
           "auto":   "Auto",
           "timer":  "Timer",

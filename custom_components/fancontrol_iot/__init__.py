@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -17,9 +18,48 @@ from .coordinator import FanControlCoordinator, TuyaClient
 
 _LOGGER = logging.getLogger(__name__)
 
+# ====================================================================
+# Lovelace-Strategy: registriert ein JS-Modul, das automatisch die
+# 3 Dashboard-Views (Lüfter / Schwellwerte / Einstellungen) generiert.
+# ====================================================================
+STRATEGY_VERSION = "0.5.2"
+STRATEGY_URL = "/fancontrol_iot/fancontrol-strategy.js"
+STRATEGY_FILE = Path(__file__).parent / "frontend" / "fancontrol-strategy.js"
+_FRONTEND_KEY = "_strategy_registered"
+
+
+async def _async_register_strategy(hass: HomeAssistant) -> None:
+    """Stellt die Strategy als statisches JS-Modul bereit und sorgt dafür,
+    dass es von HA beim Laden des Frontends mitgeladen wird."""
+    domain_data = hass.data.setdefault(DOMAIN, {})
+    if domain_data.get(_FRONTEND_KEY):
+        return
+
+    # JS-Datei als statischen Pfad ausliefern
+    try:
+        from homeassistant.components.http import StaticPathConfig
+        await hass.http.async_register_static_paths([
+            StaticPathConfig(STRATEGY_URL, str(STRATEGY_FILE), False)
+        ])
+    except ImportError:  # Fallback alt-HA
+        hass.http.register_static_path(STRATEGY_URL, str(STRATEGY_FILE), False)
+
+    # In Frontend als Extra-Modul mitladen — damit ist die Strategy
+    # in allen Dashboards verfügbar, ohne dass der User Resources pflegen muss.
+    try:
+        from homeassistant.components.frontend import add_extra_js_url
+        add_extra_js_url(hass, f"{STRATEGY_URL}?v={STRATEGY_VERSION}")
+    except Exception:  # noqa: BLE001
+        _LOGGER.warning("FanControl-Strategy konnte nicht als Extra-JS registriert werden.")
+
+    domain_data[_FRONTEND_KEY] = True
+    _LOGGER.info("FanControl-Strategy registriert (%s).", STRATEGY_URL)
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Setup einer Geraete-Instanz aus dem Config-Entry."""
+    await _async_register_strategy(hass)
+
     client = TuyaClient(
         device_id=entry.data["device_id"],
         local_key=entry.data["local_key"],

@@ -102,17 +102,49 @@
     "fan":    { "fan": { "name": "Lüfter" } },
     "sensor": {
       "temperature": { "name": "Temperatur" },
-      "humidity":    { "name": "Feuchte" }
+      "humidity":    { "name": "Feuchte" },
+      "countdown":   { "name": "Countdown" }
+    },
+    "binary_sensor": {
+      "alarm_triggered": { "name": "Alarm ausgelöst" }
+    },
+    "switch": {
+      "auto_high_temp":   { "name": "Auto · Hoch · Temp" },
+      "auto_high_humid":  { "name": "Auto · Hoch · Feuchte" },
+      "auto_low_temp":    { "name": "Auto · Tief · Temp" },
+      "auto_low_humid":   { "name": "Auto · Tief · Feuchte" },
+      "alarm_high_temp":  { "name": "Alarm · Hoch · Temp" },
+      "alarm_high_humid": { "name": "Alarm · Hoch · Feuchte" },
+      "alarm_low_temp":   { "name": "Alarm · Tief · Temp" },
+      "alarm_low_humid":  { "name": "Alarm · Tief · Feuchte" },
+      "child_lock":       { "name": "Kindersicherung" },
+      "display_celsius":  { "name": "Display in °C" }
     },
     "number": {
       "target_temperature": { "name": "Soll-Temperatur" },
       "target_humidity":    { "name": "Soll-Feuchte" },
-      "timer":              { "name": "Timer" }
+      "timer":              { "name": "Timer" },
+      "brightness":         { "name": "Display-Helligkeit" },
+      "speed_stage":        { "name": "Drehzahlstufe" },
+      "temp_calibration":   { "name": "Temp-Kalibrierung" },
+      "humid_calibration":  { "name": "Feuchte-Kalibrierung" },
+      "auto_high_temp":     { "name": "Auto · Hoch · Temperatur" },
+      "auto_low_temp":      { "name": "Auto · Tief · Temperatur" },
+      "alarm_high_temp":    { "name": "Alarm · Hoch · Temperatur" },
+      "alarm_low_temp":     { "name": "Alarm · Tief · Temperatur" },
+      "auto_high_humid":    { "name": "Auto · Hoch · Feuchte" },
+      "auto_low_humid":     { "name": "Auto · Tief · Feuchte" },
+      "alarm_high_humid":   { "name": "Alarm · Hoch · Feuchte" },
+      "alarm_low_humid":    { "name": "Alarm · Tief · Feuchte" }
     },
     "select": {
       "mode": {
         "name": "Modus",
         "state": {
+          "ON":     "Manuell (An)",
+          "AUTO":   "Automatik",
+          "TIMER":  "Timer",
+          "ALARM":  "Alarm",
           "manual": "Manuell",
           "auto":   "Automatik",
           "timer":  "Timer",

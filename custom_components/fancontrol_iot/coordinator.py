@@ -18,12 +18,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
+    ALARM_FLAG_VALUE,
     DEFAULT_MODE_OPTIONS,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SOCKET_TIMEOUT,
     DEFAULT_SPEED_MAX,
     DEFAULT_SPEED_MIN,
     DEFAULT_TEMP_SCALE,
+    DEFAULT_TEMP_UNIT_INPUT,
     DOMAIN,
     CONF_MODE_OPTIONS,
     CONF_SCAN_INTERVAL,
@@ -31,7 +33,11 @@ from .const import (
     CONF_SPEED_MAX,
     CONF_SPEED_MIN,
     CONF_TEMP_SCALE,
+    CONF_TEMP_UNIT_INPUT,
     DP_KEYS,
+    EXTRA_DP_ROLES,
+    TEMP_UNIT_FAHRENHEIT,
+    TRIGGER_SWITCH_ROLES,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -133,11 +139,18 @@ class FanControlCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     @staticmethod
     def _build_dp_map(entry: ConfigEntry) -> dict[str, int]:
-        """conf-key -> dp-nummer Mapping aus Options + Defaults."""
+        """role -> dp-nummer Mapping aus Options + Defaults.
+
+        Klassische DP_KEYS (per Options einstellbar) + erweiterte Rollen
+        (fest defaultet, da Gerät-modell-spezifisch — User kann später per
+        Options-Flow erweitern)."""
         out: dict[str, int] = {}
         for conf_key, default in DP_KEYS:
             role = conf_key.replace("dp_", "")
             out[role] = int(entry.options.get(conf_key, default))
+        for role, default in EXTRA_DP_ROLES:
+            # Override-Möglichkeit via Options ("dp_<role>"-Key)
+            out[role] = int(entry.options.get(f"dp_{role}", default))
         return out
 
     def dp_for(self, role: str) -> int:
@@ -155,6 +168,59 @@ class FanControlCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def temp_scale(self) -> float:
         return float(self.entry.options.get(CONF_TEMP_SCALE, DEFAULT_TEMP_SCALE))
+
+    @property
+    def temp_unit_input(self) -> str:
+        """Liefert 'fahrenheit' oder 'celsius'. Bei 'fahrenheit' rechnet
+        der Temp-Sensor automatisch in °C um (EUT-300B liefert °F)."""
+        return str(self.entry.options.get(CONF_TEMP_UNIT_INPUT, DEFAULT_TEMP_UNIT_INPUT))
+
+    @property
+    def temp_input_is_fahrenheit(self) -> bool:
+        return self.temp_unit_input == TEMP_UNIT_FAHRENHEIT
+
+    # ---- Alarm / Notbetrieb-Auswertung ----
+
+    @property
+    def is_alarm_active(self) -> bool:
+        """Hardware-Alarm aktiv (Gerät boosted Lüfter auf Max)."""
+        return str(self.dp_value("alarm_flag", "0")) == ALARM_FLAG_VALUE
+
+    def actual_speed(self) -> int | None:
+        """Tatsächlich laufende Drehzahl — nicht der Setpoint, sondern was
+        das Gerät real ausführt (kann durch Alarm-Boost vom Setpoint abweichen).
+        Bevorzugt DP 103, fällt auf DP 102 zurück wenn nicht verfügbar."""
+        v = self.dp_value("speed_actual")
+        if v is None:
+            v = self.dp_value("speed")
+        try:
+            return int(v) if v is not None else None
+        except (TypeError, ValueError):
+            return None
+
+    # ---- Trigger-Switch-Konvertierung (INVERTIERT) ----
+
+    @staticmethod
+    def is_trigger_switch(role: str) -> bool:
+        return role in TRIGGER_SWITCH_ROLES
+
+    def trigger_is_on(self, role: str) -> bool | None:
+        """Trigger-Switches haben invertiertes Encoding: '0' = ON, '1' = OFF.
+        Liefert sauberen Bool für HA-Entities."""
+        v = self.dp_value(role)
+        if v is None:
+            return None
+        return str(v) == "0"
+
+    async def async_set_trigger(self, role: str, on: bool) -> None:
+        """Schreibt einen Trigger-Switch invertiert (HA-ON -> '0', HA-OFF -> '1')."""
+        await self.async_set_role(role, "0" if on else "1")
+
+    @property
+    def power_and_speed_share_dp(self) -> bool:
+        """Wenn power-DP == speed-DP (wie beim EUT-300B mit DP 102), nutzen
+        wir Speed-as-Power-Semantik: 0 = Aus, >0 = An mit Drehzahl."""
+        return self.dp_for("power") == self.dp_for("speed") > 0
 
     @property
     def mode_options(self) -> list[str]:

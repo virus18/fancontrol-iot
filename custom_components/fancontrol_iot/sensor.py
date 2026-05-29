@@ -8,11 +8,11 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, UnitOfTemperature
+from homeassistant.const import PERCENTAGE, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import ALARM_FLAG_VALUE, DOMAIN
 from .coordinator import FanControlCoordinator
 from .entity import FanControlBaseEntity
 
@@ -23,7 +23,13 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: FanControlCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([TemperatureSensor(coordinator), HumiditySensor(coordinator)])
+    entities: list[SensorEntity] = [
+        TemperatureSensor(coordinator),
+        HumiditySensor(coordinator),
+    ]
+    if coordinator.dp_for("alarm_flag") > 0:
+        entities.append(CountdownSensor(coordinator))
+    async_add_entities(entities)
 
 
 class _BaseSensor(FanControlBaseEntity, SensorEntity):
@@ -45,9 +51,13 @@ class TemperatureSensor(_BaseSensor):
         if raw is None:
             return None
         try:
-            return float(raw) * self.coordinator.temp_scale
+            scaled = float(raw) * self.coordinator.temp_scale
         except (TypeError, ValueError):
             return None
+        # EUT-300B liefert °F-Integer (z.B. 71). Umrechnen auf °C wenn so konfiguriert.
+        if self.coordinator.temp_input_is_fahrenheit:
+            return round((scaled - 32.0) * 5.0 / 9.0, 1)
+        return scaled
 
 
 class HumiditySensor(_BaseSensor):
@@ -65,5 +75,33 @@ class HumiditySensor(_BaseSensor):
             return None
         try:
             return float(raw)
+        except (TypeError, ValueError):
+            return None
+
+
+class CountdownSensor(FanControlBaseEntity, SensorEntity):
+    """Timer-Countdown in Sekunden. DP 105 ist überladen — der Wert "8"
+    bedeutet 'Alarm aktiv' (siehe AlarmTriggeredSensor) und wird hier als 0
+    behandelt, damit der Countdown-Sensor nicht fälschlich 8s anzeigt."""
+
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:timer-sand"
+    _attr_translation_key = "countdown"
+
+    def __init__(self, coordinator: FanControlCoordinator):
+        super().__init__(coordinator, "countdown")
+
+    @property
+    def native_value(self) -> int | None:
+        raw = self.coordinator.dp_value("alarm_flag")
+        if raw is None:
+            return None
+        s = str(raw)
+        if s == ALARM_FLAG_VALUE:        # "8" = Alarm — separater binary_sensor
+            return 0
+        try:
+            return max(0, int(s))
         except (TypeError, ValueError):
             return None
