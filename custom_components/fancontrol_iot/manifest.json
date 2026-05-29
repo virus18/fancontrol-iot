@@ -1,14 +1,14 @@
 {
   "domain": "fancontrol_iot",
   "name": "FanControl IoT",
-  "version": "0.5.5",
-  "documentation": "https://github.com/virus18/fancontrol-iot",
-  "issue_tracker": "https://github.com/virus18/fancontrol-iot/issues",
   "codeowners": ["@virus18"],
   "config_flow": true,
-  "iot_class": "local_polling",
-  "integration_type": "device",
-  "requirements": ["tinytuya>=1.16.0"],
   "dependencies": ["http"],
-  "loggers": ["tinytuya"]
+  "documentation": "https://github.com/virus18/fancontrol-iot",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/virus18/fancontrol-iot/issues",
+  "loggers": ["tinytuya"],
+  "requirements": ["tinytuya>=1.16.0"],
+  "version": "0.5.5"
 }
